@@ -89,12 +89,21 @@ func getTaskAndRun(client *rpc2.Client, args *common.Args, reply *string) error 
 				break
 			}
 		}
-		if string(buf[:]) == "ok" {
-			*reply = "ok"
-			break
-		} else if string(buf[:]) == "error" {
-			*reply = "error"
-			break
+		switch string(buf[:]) {
+		case "ok":
+			{
+				*reply = "ok"
+				break
+			}
+		case "error":
+			{
+				*reply = "error"
+				break
+			}
+		case "running":
+			{
+				//donothing
+			}
 		}
 
 		time.Sleep(time.Second * 120)
