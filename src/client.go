@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"common"
 	ec "errorcheck"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os/exec"
 	"time"
@@ -52,13 +54,13 @@ func main() {
 	fmt.Println("Unregister result: ", rep)
 }
 
-func sendTask(client *rpc2.Client, args *common.Args, reply *string) error {
+func sendTask(server *rpc2.Client, args *common.Args, reply *string) error {
 	*reply = "ok"
 	return nil
 }
 
 //getTask 中的参数应为哈希码
-func getTaskAndRun(client *rpc2.Client, args *common.Args, reply *string) error {
+func getTaskAndRun(server *rpc2.Client, args *common.Args, reply *string) error {
 	err := sh.Get(args.Hash, "$HOME/.task")
 	ec.CheckError(err, "Get task file: ")
 
@@ -92,7 +94,13 @@ func getTaskAndRun(client *rpc2.Client, args *common.Args, reply *string) error 
 		switch string(buf[:]) {
 		case "ok":
 			{
-				*reply = "ok"
+				//上传结果到ipfs，获得哈希码，并将哈希码返回
+				resultfile := "result"
+				fileByte, err := ioutil.ReadFile(resultfile)
+				ec.CheckError(err, "read result file:")
+
+				resultHash, err := sh.Add(bytes.NewReader(fileByte))
+				*reply = resultHash
 				break
 			}
 		case "error":
@@ -103,10 +111,10 @@ func getTaskAndRun(client *rpc2.Client, args *common.Args, reply *string) error 
 		case "running":
 			{
 				//donothing
+				time.Sleep(time.Second)
 			}
 		}
-
-		time.Sleep(time.Second * 120)
+		time.Sleep(time.Second * 119)
 	}
 
 	return nil
